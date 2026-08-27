@@ -1,0 +1,88 @@
+[
+  {
+    "timestamp": "2026-08-27T18:30:00Z",
+    "user_message": "Create a complete local puzzle game project inspired by the Zip pattern, with React, TypeScript, Vite, puzzle generation, solver, stats, local storage, daily mode, custom mode, export/backup scripts, GitHub Pages config, and README documentation.",
+    "agent_summary": "Set up the Vite React TypeScript project, installed Node, initialized git, and started replacing the starter app with the puzzle game project.",
+    "actions": [
+      "Install Node 20 via nvm",
+      "Scaffold Vite React TypeScript app",
+      "Install project dependencies",
+      "Initialize git repository",
+      "Replace starter files with custom game architecture"
+    ],
+    "files_created": [
+      "src/config.ts",
+      "src/types.ts",
+      "src/utils/path.ts",
+      "src/utils/storage.ts",
+      "src/tests/path-utils.test.ts"
+    ],
+    "files_modified": [
+      "package.json",
+      "src/App.tsx",
+      "src/App.css",
+      "vite.config.ts",
+      "README.md",
+      ".gitignore"
+    ],
+    "commands": [
+      "nvm install 20",
+      "npm create vite@latest pathline-puzzle -- --template react-ts",
+      "npm install",
+      "npm run build"
+    ],
+    "errors": [
+      "Node and npm were not available in PATH; fixed by installing Node with nvm.",
+      "The template scaffold prompted for confirmation; fixed with a non-interactive accept flow."
+    ],
+    "decisions": [
+      "Use Vite + React + TypeScript for a lightweight local app.",
+      "Keep logic in utility modules so UI and solver code remain testable."
+    ],
+    "commit_hash": null
+  },
+  {
+    "timestamp": "2026-08-27T18:45:00Z",
+    "user_message": "Add the main game logic and validation tests.",
+    "agent_summary": "Implemented the generator, solver, and test suite, then added the export and backup commands required for project logs and backups.",
+    "actions": [
+      "Add puzzle generator and solver logic",
+      "Add Vitest coverage for path utilities and puzzle validation",
+      "Add export and backup scripts",
+      "Configure deployment workflow"
+    ],
+    "files_created": [
+      "src/generator.ts",
+      "src/solver.ts",
+      "src/tests/generator-solver.test.ts",
+      "scripts/export-logs.mjs",
+      "scripts/backup-project.mjs",
+      ".github/workflows/deploy-pages.yml",
+      ".env.example",
+      "agent_logs/agent_conversation.md",
+      "agent_logs/agent_conversation.json",
+      "agent_logs/development_log.md",
+      "agent_logs/decisions.md"
+    ],
+    "files_modified": [
+      "package.json",
+      "vite.config.ts",
+      "README.md"
+    ],
+    "commands": [
+      "npm test",
+      "npm run build",
+      "npm run export",
+      "npm run backup"
+    ],
+    "errors": [
+      "Initial missing 'test' script; fixed by updating package.json.",
+      "Vite config required a test section for Vitest; fixed by adding it."
+    ],
+    "decisions": [
+      "Separate generator logic from UI so puzzles remain deterministic and easy to validate.",
+      "Use zip-based export and backup scripts to produce portable archives with a clear manifest."
+    ],
+    "commit_hash": null
+  }
+]
