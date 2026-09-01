@@ -34,6 +34,7 @@ button {
   --panel-bg: rgba(255, 255, 255, 0.64);
   --muted-text: #38536f;
   --accent: #1769e8;
+  --wall-color: #7c9bbd;
   max-width: 1100px;
   margin: 0 auto;
   padding: 28px 18px 40px;
@@ -48,6 +49,7 @@ button {
   --panel-bg: rgba(255, 255, 255, 0.58);
   --muted-text: #70443d;
   --accent: #c94f35;
+  --wall-color: #b77c70;
 }
 
 .maze-app.theme-meadow {
@@ -56,6 +58,7 @@ button {
   --panel-bg: rgba(255, 255, 255, 0.6);
   --muted-text: #386149;
   --accent: #19734a;
+  --wall-color: #719d7f;
 }
 
 .maze-app.theme-night {
@@ -64,6 +67,7 @@ button {
   --panel-bg: rgba(7, 14, 28, 0.68);
   --muted-text: #b5c5df;
   --accent: #76b7ff;
+  --wall-color: #91a8c7;
 }
 
 .maze-topbar {
@@ -104,10 +108,23 @@ h1 {
   cursor: pointer;
 }
 
+.action-row button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .action-row .primary {
   background: linear-gradient(135deg, #76b7ff, #58efc2);
   color: #071521;
   font-weight: 700;
+}
+
+.hint-readout {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--accent);
+  font-weight: 800;
+  text-align: right;
 }
 
 .stats-bar {
@@ -289,6 +306,10 @@ h1 {
 }
 
 .maze-cell.hint {
+  box-shadow: inset 0 0 0 4px #f5b942;
+}
+
+.maze-cell.hint {
   box-shadow: inset 0 0 0 3px rgba(255, 220, 110, 0.9);
 }
 
@@ -338,6 +359,10 @@ h1 {
   .maze-topbar {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .hint-readout {
+    text-align: left;
   }
 
   .maze-panel {
