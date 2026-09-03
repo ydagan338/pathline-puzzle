@@ -283,10 +283,6 @@ h1 {
   background: rgba(255, 255, 255, 0.06);
 }
 
-.maze-cell.current {
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.9);
-}
-
 .cell-value {
   display: inline-flex;
   align-items: center;
