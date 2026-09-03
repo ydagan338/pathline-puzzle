@@ -58,6 +58,13 @@ const directions = [
   { row: 0, col: -1, side: 'left' as const, opposite: 'right' as const },
 ]
 
+const keyboardDirections = {
+  ArrowUp: { row: -1, col: 0 },
+  ArrowRight: { row: 0, col: 1 },
+  ArrowDown: { row: 1, col: 0 },
+  ArrowLeft: { row: 0, col: -1 },
+} as const
+
 const makeMazePath = () => {
   const start = keyFrom(0, 0)
   const route = [start]
@@ -235,11 +242,10 @@ function App() {
   const [path, setPath] = useState<string[]>([])
   const [dragging, setDragging] = useState(false)
   const [pointerPoint, setPointerPoint] = useState<string | null>(null)
-  const [hintCell, setHintCell] = useState<string | null>(null)
-  const [hintCooldown, setHintCooldown] = useState(0)
   const [elapsedMs, setElapsedMs] = useState(0)
   const [startedAt, setStartedAt] = useState<number | null>(null)
   const [completed, setCompleted] = useState(false)
+  const [celebrationVisible, setCelebrationVisible] = useState(false)
   const [rankings, setRankings] = useState<Ranking[]>(() => loadJson<Ranking[]>(RANKINGS_KEY, []))
   const [lastResult, setLastResult] = useState<{ difficulty: number; timeMs: number; rank: number } | null>(null)
   const [theme, setTheme] = useState<Theme>(() => {
@@ -271,16 +277,6 @@ function App() {
       window.removeEventListener('pointercancel', stopDragging)
     }
   }, [])
-
-  useEffect(() => {
-    if (hintCooldown === 0) {
-      return
-    }
-    const timer = window.setInterval(() => {
-      setHintCooldown((current) => Math.max(0, current - 1))
-    }, 1000)
-    return () => window.clearInterval(timer)
-  }, [hintCooldown])
 
   const boardStyle = useMemo(
     () => ({
@@ -323,8 +319,7 @@ function App() {
     setElapsedMs(0)
     setStartedAt(null)
     setCompleted(false)
-    setHintCell(null)
-    setHintCooldown(0)
+    setCelebrationVisible(false)
   }
 
   const addStep = (cell: string) => {
@@ -364,9 +359,6 @@ function App() {
       }
 
       const nextPath = [...currentPath, cell]
-      if (cell === hintCell) {
-        setHintCell(null)
-      }
       if (nextPath.length === puzzle.solution.length) {
         const completionTime = startedAt === null ? 0 : Date.now() - startedAt
         const newRanking: Ranking = {
@@ -390,10 +382,11 @@ function App() {
           rank: difficultyRankings.findIndex((ranking) => ranking.puzzleId === puzzle.id) + 1,
         })
         setCompleted(true)
+        setCelebrationVisible(true)
         window.setTimeout(() => {
+          setCelebrationVisible(false)
           resetPuzzle(buildPuzzle())
         }, 2200)
-      } else {
       }
 
       return nextPath
@@ -406,29 +399,7 @@ function App() {
     setElapsedMs(0)
     setStartedAt(null)
     setCompleted(false)
-    setHintCell(null)
-    setHintCooldown(0)
-  }
-
-  const handleHint = () => {
-    if (path.length === 0 || hintCooldown > 0 || path.length === puzzle.solution.length) {
-      return
-    }
-
-    let correctPrefixLength = 0
-    while (
-      correctPrefixLength < path.length
-      && path[correctPrefixLength] === puzzle.solution[correctPrefixLength]
-    ) {
-      correctPrefixLength += 1
-    }
-
-    if (correctPrefixLength !== path.length) {
-      setPath(puzzle.solution.slice(0, correctPrefixLength))
-    }
-
-    setHintCell(puzzle.solution[correctPrefixLength])
-    setHintCooldown(10)
+    setCelebrationVisible(false)
   }
 
   const handlePointerDown = (cell: string) => {
@@ -456,6 +427,51 @@ function App() {
     setPointerPoint(null)
   }
 
+  const moveWithKeyboard = (key: keyof typeof keyboardDirections) => {
+    if (completed) {
+      return
+    }
+
+    const delta = keyboardDirections[key]
+    if (!delta) {
+      return
+    }
+
+    const currentCell = path[path.length - 1] ?? puzzle.solution[0]
+    const nextRow = coordsFrom(currentCell).row + delta.row
+    const nextCol = coordsFrom(currentCell).col + delta.col
+
+    if (nextRow < 0 || nextRow >= BOARD_SIZE || nextCol < 0 || nextCol >= BOARD_SIZE) {
+      return
+    }
+
+    const nextCell = keyFrom(nextRow, nextCol)
+    if (!isAdjacent(currentCell, nextCell) || !canMove(puzzle.walls, currentCell, nextCell)) {
+      return
+    }
+
+    if (path.length === 0) {
+      setPath([puzzle.solution[0]])
+      setStartedAt((current) => current ?? Date.now())
+    }
+
+    addStep(nextCell)
+  }
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const key = event.key as keyof typeof keyboardDirections
+      if (!keyboardDirections[key]) {
+        return
+      }
+      event.preventDefault()
+      moveWithKeyboard(key)
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [completed, path, puzzle])
+
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
     if (!dragging) {
       return
@@ -475,15 +491,8 @@ function App() {
         </div>
         <div className="action-row">
           <button type="button" onClick={handleRestart}>Restart</button>
-          <button type="button" onClick={handleHint} disabled={path.length === 0 || hintCooldown > 0 || path.length === puzzle.solution.length}>
-            {hintCooldown > 0 ? `Hint ${hintCooldown}s` : 'Hint'}
-          </button>
           <button type="button" className="primary" onClick={() => resetPuzzle(buildPuzzle())}>New puzzle</button>
         </div>
-        {hintCell && (() => {
-          const { row, col } = coordsFrom(hintCell)
-          return <p className="hint-readout" aria-live="polite">Next move: row {row + 1}, column {col + 1}</p>
-        })()}
       </header>
 
       <section className="stats-bar">
@@ -511,6 +520,13 @@ function App() {
 
       <section className="maze-panel">
         <div className="board-shell">
+          {celebrationVisible && (
+            <div className="celebration-popup" aria-live="polite">
+              <div className="celebration-badge">✓</div>
+              <h2>Puzzle complete!</h2>
+              <p>{formatTime(elapsedMs)}</p>
+            </div>
+          )}
           <div className="board-stage" onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp}>
             <svg className="route-overlay" viewBox="0 0 100 100" aria-hidden="true">
               <defs>
@@ -529,13 +545,12 @@ function App() {
               const number = checkpointNumbers.get(key)
               const isVisited = path.includes(key)
               const isCurrent = path[path.length - 1] === key
-              const isHint = hintCell === key
               const wall = puzzle.walls[key]
               return (
                 <button
                   key={key}
                   type="button"
-                  className={`maze-cell ${isVisited ? 'visited' : ''} ${isCurrent ? 'current' : ''} ${isHint ? 'hint' : ''}`}
+                  className={`maze-cell ${isVisited ? 'visited' : ''} ${isCurrent ? 'current' : ''}`}
                   style={{
                     borderRight: wall.right ? '3px solid var(--wall-color)' : undefined,
                     borderBottom: wall.bottom ? '3px solid var(--wall-color)' : undefined,

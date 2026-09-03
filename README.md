@@ -18,7 +18,7 @@ The project uses React, TypeScript, Vite, and local storage so it runs locally i
 - daily puzzle mode with deterministic generation
 - practice mode with random puzzles
 - custom puzzle support
-- hint system and undo/restart controls
+- keyboard arrow movement, drag movement, and restart controls
 - local statistics persistence
 - responsive layout for desktop and mobile
 - export and backup scripts for project packaging
@@ -107,7 +107,7 @@ The game generates a Hamiltonian-style path that covers every square exactly onc
 
 ## Solver logic
 
-The solver validates puzzle structure, confirms route correctness, detects impossible states, and provides hints by comparing the player path with the generated solution.
+The solver validates puzzle structure, confirms route correctness, and detects impossible states by comparing the player path with the generated solution.
 
 ## Future improvements
 
