@@ -306,6 +306,10 @@ function App() {
     addStep(nextCell)
   }
 
+  const handleDirectionClick = (key: keyof typeof keyboardDirections) => {
+    moveWithKeyboard(key)
+  }
+
   const handleKeyDown = (event: ReactKeyboardEvent<HTMLElement>) => {
     if (event.target instanceof HTMLSelectElement || event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
       return
@@ -426,6 +430,12 @@ function App() {
               )
             })}
             </div>
+          </div>
+          <div className="direction-pad" aria-label="Path controls">
+            <button type="button" aria-label="Move up" onClick={() => handleDirectionClick('ArrowUp')}>&#8593;</button>
+            <button type="button" aria-label="Move left" onClick={() => handleDirectionClick('ArrowLeft')}>&#8592;</button>
+            <button type="button" aria-label="Move down" onClick={() => handleDirectionClick('ArrowDown')}>&#8595;</button>
+            <button type="button" aria-label="Move right" onClick={() => handleDirectionClick('ArrowRight')}>&#8594;</button>
           </div>
         </div>
 
