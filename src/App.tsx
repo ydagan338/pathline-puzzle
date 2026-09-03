@@ -299,8 +299,9 @@ function App() {
     }
 
     if (path.length === 0) {
-      setPath([puzzle.solution[0]])
+      setPath([currentCell, nextCell])
       setStartedAt(Date.now())
+      return
     }
 
     addStep(nextCell)
