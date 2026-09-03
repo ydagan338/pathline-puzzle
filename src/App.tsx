@@ -400,13 +400,7 @@ function App() {
         <div className="board-shell">
           <div className="board-stage" onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp}>
             <svg className="route-overlay" viewBox="0 0 100 100" aria-hidden="true">
-              <defs>
-                <linearGradient id="route-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#1769e8" />
-                  <stop offset="100%" stopColor="#6434c9" />
-                </linearGradient>
-              </defs>
-              <polyline points={visibleRoutePoints} fill="none" stroke="url(#route-gradient)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.1" />
+              <polyline points={visibleRoutePoints} fill="none" stroke="#7c3aed" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.8" />
             </svg>
             <div className="board" style={boardStyle}>
             {Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => {
