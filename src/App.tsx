@@ -157,7 +157,13 @@ const canMove = (walls: Record<string, WallState>, from: string, to: string) => 
 
 const countSolutions = (puzzle: Omit<Puzzle, 'difficulty' | 'id'>, checkpointNumbers: Map<string, number>) => {
   const visited = new Set<string>()
+  let visitedStates = 0
   const search = (cell: string, nextCheckpoint: number): number => {
+    visitedStates += 1
+    if (visitedStates > 20000) {
+      return 2
+    }
+
     if (visited.size === BOARD_SIZE * BOARD_SIZE) {
       return 1
     }
@@ -192,7 +198,9 @@ const countSolutions = (puzzle: Omit<Puzzle, 'difficulty' | 'id'>, checkpointNum
 }
 
 const buildPuzzle = (): Puzzle => {
-  for (;;) {
+  let fallback: Puzzle | null = null
+
+  for (let attempt = 0; attempt < 80; attempt += 1) {
     const solution = makeMazePath()
     const checkpointCount = Math.floor(Math.random() * (MAX_CHECKPOINTS - MIN_CHECKPOINTS + 1)) + MIN_CHECKPOINTS
     const wallCount = Math.floor(Math.random() * (MAX_WALLS - MIN_WALLS + 1)) + MIN_WALLS
@@ -204,9 +212,6 @@ const buildPuzzle = (): Puzzle => {
       ]),
     )
     const candidate = { solution, checkpointCount, walls }
-    if (countSolutions(candidate, checkpointNumbers) !== 1) {
-      continue
-    }
     let turns = 0
 
     for (let index = 1; index < solution.length - 1; index += 1) {
@@ -219,14 +224,21 @@ const buildPuzzle = (): Puzzle => {
 
     const difficulty = Math.min(10, Math.max(1, 1 + (checkpointCount - MIN_CHECKPOINTS) + wallCount - 2 + Math.round((turns / (solution.length - 2)) * 3)))
 
-    return {
+    const result = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       solution,
       checkpointCount,
       difficulty,
       walls,
     }
+
+    fallback = result
+    if (countSolutions(candidate, checkpointNumbers) === 1) {
+      return result
+    }
   }
+
+  return fallback ?? buildPuzzle()
 }
 
 const formatTime = (timeMs: number) => {
