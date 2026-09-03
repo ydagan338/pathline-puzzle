@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type PointerEvent } from 'react'
+import { useEffect, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent } from 'react'
 import './App.css'
 import { loadJson, saveJson } from './utils/storage'
 
@@ -306,25 +306,19 @@ function App() {
     addStep(nextCell)
   }
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null
-      if (target?.matches('input, select, textarea')) {
-        return
-      }
-
-      const key = event.key as keyof typeof keyboardDirections
-      if (!keyboardDirections[key]) {
-        return
-      }
-
-      event.preventDefault()
-      moveWithKeyboard(key)
+  const handleKeyDown = (event: ReactKeyboardEvent<HTMLElement>) => {
+    if (event.target instanceof HTMLSelectElement || event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+      return
     }
 
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [completed, path, puzzle])
+    const key = event.key as keyof typeof keyboardDirections
+    if (!keyboardDirections[key]) {
+      return
+    }
+
+    event.preventDefault()
+    moveWithKeyboard(key)
+  }
 
   const handlePointerDown = (cell: string) => {
     if (path.length === 0 && cell !== puzzle.solution[0]) {
@@ -362,7 +356,7 @@ function App() {
   }
 
   return (
-    <main className={`maze-app theme-${theme}`}>
+    <main className={`maze-app theme-${theme}`} tabIndex={0} autoFocus onKeyDown={handleKeyDown}>
       <header className="maze-topbar">
         <div>
           <p className="eyebrow">Maze path</p>
