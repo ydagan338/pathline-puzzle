@@ -34,7 +34,6 @@ button {
   --panel-bg: rgba(255, 255, 255, 0.64);
   --muted-text: #38536f;
   --accent: #1769e8;
-  --wall-color: #7c9bbd;
   max-width: 1100px;
   margin: 0 auto;
   padding: 28px 18px 40px;
@@ -49,7 +48,6 @@ button {
   --panel-bg: rgba(255, 255, 255, 0.58);
   --muted-text: #70443d;
   --accent: #c94f35;
-  --wall-color: #b77c70;
 }
 
 .maze-app.theme-meadow {
@@ -58,7 +56,6 @@ button {
   --panel-bg: rgba(255, 255, 255, 0.6);
   --muted-text: #386149;
   --accent: #19734a;
-  --wall-color: #719d7f;
 }
 
 .maze-app.theme-night {
@@ -67,7 +64,6 @@ button {
   --panel-bg: rgba(7, 14, 28, 0.68);
   --muted-text: #b5c5df;
   --accent: #76b7ff;
-  --wall-color: #91a8c7;
 }
 
 .maze-topbar {
@@ -106,11 +102,6 @@ h1 {
   border-radius: 12px;
   padding: 0.8rem 1rem;
   cursor: pointer;
-}
-
-.action-row button:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
 }
 
 .action-row .primary {
@@ -170,66 +161,6 @@ h1 {
 
 .maze-panel {
   display: block;
-}
-
-.celebration-popup {
-  position: absolute;
-  inset: 50% auto auto 50%;
-  transform: translate(-50%, -50%);
-  z-index: 40;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: min(75vw, 260px);
-  padding: 20px 18px;
-  border-radius: 22px;
-  background: rgba(9, 21, 33, 0.83);
-  color: #f3f8ff;
-  border: 1px solid rgba(118, 183, 255, 0.5);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
-  text-align: center;
-  animation: celebration-bounce 0.35s ease-out;
-}
-
-.celebration-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #76b7ff, #58efc2);
-  color: #071521;
-  font-size: 2rem;
-  font-weight: 900;
-}
-
-.celebration-popup h2 {
-  margin: 0;
-  font-size: 1.5rem;
-}
-
-.celebration-popup p {
-  margin: 0;
-  color: #dceeff;
-  font-weight: 700;
-}
-
-@keyframes celebration-bounce {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, -42%) scale(0.8);
-  }
-  60% {
-    opacity: 1;
-    transform: translate(-50%, -55%) scale(1.04);
-  }
-  100% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
 }
 
 .rankings-panel {
@@ -355,6 +286,10 @@ h1 {
 
 .maze-cell.current {
   box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.9);
+}
+
+.maze-cell.hint {
+  box-shadow: inset 0 0 0 3px rgba(255, 220, 110, 0.9);
 }
 
 .cell-value {

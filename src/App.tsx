@@ -7,14 +7,6 @@ type Puzzle = {
   solution: string[]
   checkpointCount: number
   difficulty: number
-  walls: Record<string, WallState>
-}
-
-type WallState = {
-  top: boolean
-  right: boolean
-  bottom: boolean
-  left: boolean
 }
 
 type Ranking = {
@@ -27,8 +19,6 @@ type Ranking = {
 const BOARD_SIZE = 5
 const MIN_CHECKPOINTS = 5
 const MAX_CHECKPOINTS = 8
-const MIN_WALLS = 5
-const MAX_WALLS = 8
 const RANKINGS_KEY = 'pathline-rankings'
 const THEMES = {
   ocean: 'Ocean',
@@ -50,20 +40,6 @@ const isAdjacent = (first: string, second: string) => {
   const b = coordsFrom(second)
   return Math.abs(a.row - b.row) + Math.abs(a.col - b.col) === 1
 }
-
-const directions = [
-  { row: -1, col: 0, side: 'top' as const, opposite: 'bottom' as const },
-  { row: 0, col: 1, side: 'right' as const, opposite: 'left' as const },
-  { row: 1, col: 0, side: 'bottom' as const, opposite: 'top' as const },
-  { row: 0, col: -1, side: 'left' as const, opposite: 'right' as const },
-]
-
-const keyboardDirections = {
-  ArrowUp: { row: -1, col: 0 },
-  ArrowRight: { row: 0, col: 1 },
-  ArrowDown: { row: 1, col: 0 },
-  ArrowLeft: { row: 0, col: -1 },
-} as const
 
 const makeMazePath = () => {
   const start = keyFrom(0, 0)
@@ -107,138 +83,27 @@ const makeMazePath = () => {
   return route
 }
 
-const createWalls = (solution: string[], wallCount: number) => {
-  const walls: Record<string, WallState> = {}
-  for (let row = 0; row < BOARD_SIZE; row += 1) {
-    for (let col = 0; col < BOARD_SIZE; col += 1) {
-      walls[keyFrom(row, col)] = {
-        top: row === 0,
-        right: col === BOARD_SIZE - 1,
-        bottom: row === BOARD_SIZE - 1,
-        left: col === 0,
-      }
-    }
-  }
-
-  const solutionEdges = new Set(solution.slice(1).map((cell, index) => [solution[index], cell].sort().join('|')))
-  const candidates: Array<{ first: string; second: string; side: keyof WallState; opposite: keyof WallState }> = []
-
-  for (let row = 0; row < BOARD_SIZE; row += 1) {
-    for (let col = 0; col < BOARD_SIZE; col += 1) {
-      for (const direction of directions.slice(1, 3)) {
-        const nextRow = row + direction.row
-        const nextCol = col + direction.col
-        if (nextRow >= BOARD_SIZE || nextCol >= BOARD_SIZE) {
-          continue
-        }
-        const first = keyFrom(row, col)
-        const second = keyFrom(nextRow, nextCol)
-        if (!solutionEdges.has([first, second].sort().join('|'))) {
-          candidates.push({ first, second, side: direction.side, opposite: direction.opposite })
-        }
-      }
-    }
-  }
-
-  candidates.sort(() => Math.random() - 0.5)
-  for (const candidate of candidates.slice(0, wallCount)) {
-    walls[candidate.first][candidate.side] = true
-    walls[candidate.second][candidate.opposite] = true
-  }
-  return walls
-}
-
-const canMove = (walls: Record<string, WallState>, from: string, to: string) => {
-  const current = coordsFrom(from)
-  const next = coordsFrom(to)
-  const direction = directions.find((item) => item.row === next.row - current.row && item.col === next.col - current.col)
-  return Boolean(direction && !walls[from][direction.side])
-}
-
-const countSolutions = (puzzle: Omit<Puzzle, 'difficulty' | 'id'>, checkpointNumbers: Map<string, number>) => {
-  const visited = new Set<string>()
-  let visitedStates = 0
-  const search = (cell: string, nextCheckpoint: number): number => {
-    visitedStates += 1
-    if (visitedStates > 20000) {
-      return 2
-    }
-
-    if (visited.size === BOARD_SIZE * BOARD_SIZE) {
-      return 1
-    }
-
-    let total = 0
-    const current = coordsFrom(cell)
-    visited.add(cell)
-    for (const direction of directions) {
-      const row = current.row + direction.row
-      const col = current.col + direction.col
-      if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE) {
-        continue
-      }
-      const next = keyFrom(row, col)
-      if (visited.has(next) || !canMove(puzzle.walls, cell, next)) {
-        continue
-      }
-      const checkpoint = checkpointNumbers.get(next)
-      if (checkpoint && checkpoint !== nextCheckpoint) {
-        continue
-      }
-      total += search(next, checkpoint ? nextCheckpoint + 1 : nextCheckpoint)
-      if (total > 1) {
-        break
-      }
-    }
-    visited.delete(cell)
-    return total
-  }
-
-  return search(puzzle.solution[0], 2)
-}
-
 const buildPuzzle = (): Puzzle => {
-  let fallback: Puzzle | null = null
+  const solution = makeMazePath()
+  const checkpointCount = Math.floor(Math.random() * (MAX_CHECKPOINTS - MIN_CHECKPOINTS + 1)) + MIN_CHECKPOINTS
+  let turns = 0
 
-  for (let attempt = 0; attempt < 80; attempt += 1) {
-    const solution = makeMazePath()
-    const checkpointCount = Math.floor(Math.random() * (MAX_CHECKPOINTS - MIN_CHECKPOINTS + 1)) + MIN_CHECKPOINTS
-    const wallCount = Math.floor(Math.random() * (MAX_WALLS - MIN_WALLS + 1)) + MIN_WALLS
-    const walls = createWalls(solution, wallCount)
-    const checkpointNumbers = new Map(
-      Array.from({ length: checkpointCount }, (_, index) => [
-        solution[Math.round(index * (solution.length - 1) / (checkpointCount - 1))],
-        index + 1,
-      ]),
-    )
-    const candidate = { solution, checkpointCount, walls }
-    let turns = 0
-
-    for (let index = 1; index < solution.length - 1; index += 1) {
-      const previous = coordsFrom(solution[index - 1])
-      const next = coordsFrom(solution[index + 1])
-      if (previous.row !== next.row && previous.col !== next.col) {
-        turns += 1
-      }
-    }
-
-    const difficulty = Math.min(10, Math.max(1, 1 + (checkpointCount - MIN_CHECKPOINTS) + wallCount - 2 + Math.round((turns / (solution.length - 2)) * 3)))
-
-    const result = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      solution,
-      checkpointCount,
-      difficulty,
-      walls,
-    }
-
-    fallback = result
-    if (countSolutions(candidate, checkpointNumbers) === 1) {
-      return result
+  for (let index = 1; index < solution.length - 1; index += 1) {
+    const previous = coordsFrom(solution[index - 1])
+    const next = coordsFrom(solution[index + 1])
+    if (previous.row !== next.row && previous.col !== next.col) {
+      turns += 1
     }
   }
 
-  return fallback ?? buildPuzzle()
+  const difficulty = Math.min(10, Math.max(1, 1 + (checkpointCount - MIN_CHECKPOINTS) + Math.round((turns / (solution.length - 2)) * 5)))
+
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    solution,
+    checkpointCount,
+    difficulty,
+  }
 }
 
 const formatTime = (timeMs: number) => {
@@ -257,7 +122,6 @@ function App() {
   const [elapsedMs, setElapsedMs] = useState(0)
   const [startedAt, setStartedAt] = useState<number | null>(null)
   const [completed, setCompleted] = useState(false)
-  const [celebrationVisible, setCelebrationVisible] = useState(false)
   const [rankings, setRankings] = useState<Ranking[]>(() => loadJson<Ranking[]>(RANKINGS_KEY, []))
   const [lastResult, setLastResult] = useState<{ difficulty: number; timeMs: number; rank: number } | null>(null)
   const [theme, setTheme] = useState<Theme>(() => {
@@ -331,7 +195,6 @@ function App() {
     setElapsedMs(0)
     setStartedAt(null)
     setCompleted(false)
-    setCelebrationVisible(false)
   }
 
   const addStep = (cell: string) => {
@@ -354,10 +217,6 @@ function App() {
       }
 
       if (!isAdjacent(lastCell, cell)) {
-        return currentPath
-      }
-
-      if (!canMove(puzzle.walls, lastCell, cell)) {
         return currentPath
       }
 
@@ -394,11 +253,10 @@ function App() {
           rank: difficultyRankings.findIndex((ranking) => ranking.puzzleId === puzzle.id) + 1,
         })
         setCompleted(true)
-        setCelebrationVisible(true)
         window.setTimeout(() => {
-          setCelebrationVisible(false)
           resetPuzzle(buildPuzzle())
         }, 2200)
+      } else {
       }
 
       return nextPath
@@ -411,7 +269,6 @@ function App() {
     setElapsedMs(0)
     setStartedAt(null)
     setCompleted(false)
-    setCelebrationVisible(false)
   }
 
   const handlePointerDown = (cell: string) => {
@@ -438,51 +295,6 @@ function App() {
     setDragging(false)
     setPointerPoint(null)
   }
-
-  const moveWithKeyboard = (key: keyof typeof keyboardDirections) => {
-    if (completed) {
-      return
-    }
-
-    const delta = keyboardDirections[key]
-    if (!delta) {
-      return
-    }
-
-    const currentCell = path[path.length - 1] ?? puzzle.solution[0]
-    const nextRow = coordsFrom(currentCell).row + delta.row
-    const nextCol = coordsFrom(currentCell).col + delta.col
-
-    if (nextRow < 0 || nextRow >= BOARD_SIZE || nextCol < 0 || nextCol >= BOARD_SIZE) {
-      return
-    }
-
-    const nextCell = keyFrom(nextRow, nextCol)
-    if (!isAdjacent(currentCell, nextCell) || !canMove(puzzle.walls, currentCell, nextCell)) {
-      return
-    }
-
-    if (path.length === 0) {
-      setPath([puzzle.solution[0]])
-      setStartedAt((current) => current ?? Date.now())
-    }
-
-    addStep(nextCell)
-  }
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const key = event.key as keyof typeof keyboardDirections
-      if (!keyboardDirections[key]) {
-        return
-      }
-      event.preventDefault()
-      moveWithKeyboard(key)
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [completed, path, puzzle])
 
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
     if (!dragging) {
@@ -532,13 +344,6 @@ function App() {
 
       <section className="maze-panel">
         <div className="board-shell">
-          {celebrationVisible && (
-            <div className="celebration-popup" aria-live="polite">
-              <div className="celebration-badge">✓</div>
-              <h2>Puzzle complete!</h2>
-              <p>{formatTime(elapsedMs)}</p>
-            </div>
-          )}
           <div className="board-stage" onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp}>
             <svg className="route-overlay" viewBox="0 0 100 100" aria-hidden="true">
               <defs>
@@ -557,16 +362,11 @@ function App() {
               const number = checkpointNumbers.get(key)
               const isVisited = path.includes(key)
               const isCurrent = path[path.length - 1] === key
-              const wall = puzzle.walls[key]
               return (
                 <button
                   key={key}
                   type="button"
                   className={`maze-cell ${isVisited ? 'visited' : ''} ${isCurrent ? 'current' : ''}`}
-                  style={{
-                    borderRight: wall.right ? '3px solid var(--wall-color)' : undefined,
-                    borderBottom: wall.bottom ? '3px solid var(--wall-color)' : undefined,
-                  }}
                   onPointerDown={() => handlePointerDown(key)}
                   onPointerEnter={() => handlePointerEnter(key)}
                   onPointerUp={handlePointerUp}
