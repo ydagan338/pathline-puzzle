@@ -41,6 +41,13 @@ const isAdjacent = (first: string, second: string) => {
   return Math.abs(a.row - b.row) + Math.abs(a.col - b.col) === 1
 }
 
+const keyboardDirections = {
+  ArrowUp: { row: -1, col: 0 },
+  ArrowRight: { row: 0, col: 1 },
+  ArrowDown: { row: 1, col: 0 },
+  ArrowLeft: { row: 0, col: -1 },
+} as const
+
 const makeMazePath = () => {
   const start = keyFrom(0, 0)
   const route = [start]
@@ -270,6 +277,54 @@ function App() {
     setStartedAt(null)
     setCompleted(false)
   }
+
+  const moveWithKeyboard = (key: keyof typeof keyboardDirections) => {
+    if (completed) {
+      return
+    }
+
+    const currentCell = path[path.length - 1] ?? puzzle.solution[0]
+    const direction = keyboardDirections[key]
+    const current = coordsFrom(currentCell)
+    const nextRow = current.row + direction.row
+    const nextCol = current.col + direction.col
+
+    if (nextRow < 0 || nextRow >= BOARD_SIZE || nextCol < 0 || nextCol >= BOARD_SIZE) {
+      return
+    }
+
+    const nextCell = keyFrom(nextRow, nextCol)
+    if (!isAdjacent(currentCell, nextCell)) {
+      return
+    }
+
+    if (path.length === 0) {
+      setPath([puzzle.solution[0]])
+      setStartedAt(Date.now())
+    }
+
+    addStep(nextCell)
+  }
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      if (target?.matches('input, select, textarea')) {
+        return
+      }
+
+      const key = event.key as keyof typeof keyboardDirections
+      if (!keyboardDirections[key]) {
+        return
+      }
+
+      event.preventDefault()
+      moveWithKeyboard(key)
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [completed, path, puzzle])
 
   const handlePointerDown = (cell: string) => {
     if (path.length === 0 && cell !== puzzle.solution[0]) {
